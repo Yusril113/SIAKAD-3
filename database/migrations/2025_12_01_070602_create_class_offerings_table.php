@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('class_offerings', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('course_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('lecturer_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('semester_id')->constrained()->cascadeOnDelete();
-            $table->string('section')->nullable(); // Kelas A/B
-            $table->boolean('attendance_open')->default(false); // window presensi
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('class_offerings')) {
+            Schema::create('class_offerings', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('course_id')->constrained()->cascadeOnDelete();
+                $table->foreignId('lecturer_id')->constrained()->cascadeOnDelete();
+                $table->foreignId('semester_id')->constrained()->cascadeOnDelete();
+                $table->string('section')->nullable(); // Kelas A/B
+                $table->boolean('attendance_open')->default(false); // window presensi
+                $table->timestamps();
+            });
+        }
     }
 
     /**

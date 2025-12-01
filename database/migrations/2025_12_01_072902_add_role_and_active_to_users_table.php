@@ -12,8 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('role_id')->nullable()->constrained()->cascadeOnUpdate()->restrictOnDelete();
-            $table->boolean('is_active')->default(false);
+            if (!Schema::hasColumn('users', 'role_id')) {
+                $table->foreignId('role_id')->nullable()->constrained();
+            }
+
+            if (!Schema::hasColumn('users', 'active')) {
+                $table->boolean('active')->default(true);
+            }
         });
     }
 
