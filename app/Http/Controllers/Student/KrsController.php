@@ -9,7 +9,7 @@ use App\Models\Enrollment;
 use App\Models\Semester;
 use App\Models\ClassOffering;
 
-class Enrollments extends Controller
+class KrsController extends Controller
 {
     public function index() {
     $student = Auth::user()->student;

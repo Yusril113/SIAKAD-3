@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Student;
 
 class User extends Authenticatable
 {
@@ -14,6 +15,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role_id'
     ];
 
     protected $hidden = [
@@ -38,13 +40,13 @@ class User extends Authenticatable
     // Relasi ke Student
     public function student()
     {
-        return $this->hasOne(\App\Models\Student::class);
+        return $this->hasOne(Student::class);
 
     }
 
     // Relasi ke Lecturer
     public function lecturer()
     {
-       return $this->hasOne(\App\Models\Lecturer::class);
+       return $this->hasOne(Lecturer::class);
     }
 }
