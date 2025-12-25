@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Student;
 use App\Models\Lecturer;
+use App\Models\Mahasiswa;
 use App\Models\Role;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Registered;
@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
@@ -24,48 +25,56 @@ class RegisteredUserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        // 1. Validasi Dasar (Disinkronkan dengan value di View: mahasiswa, dosen, admin)
+        $rules = [
             'name' => ['required', 'string', 'max:50'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed'],
-            'role' => ['required', 'in:student,lecturer,admin'],
-            'nim' => ['required', 'string', 'max:20'],
-            'program_studi' => ['required', 'string'],
-            'angkatan' => ['required', 'numeric'],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'role' => ['required', 'in:mahasiswa,dosen,admin'],
+        ];
 
-        ]);
+        // 2. Validasi Spesifik (Hanya NIM dan NIDN sesuai form terbaru)
+        if ($request->role === 'mahasiswa') {
+            $rules['nim'] = ['required', 'string', 'max:20', 'unique:mahasiswa,nim'];
+        } elseif ($request->role === 'dosen') {
+            $rules['nidn'] = ['required', 'string', 'max:20', 'unique:lecturers,nidn'];
+        }
 
+        $request->validate($rules);
+        $roleName = strtolower($request->role);
+        // 3. Cari Role ID berdasarkan nama (mahasiswa/dosen/admin)
         $role = Role::where('name', $request->role)->first();
         if (!$role) {
-            return back()->withErrors(['role' => 'Role tidak valid atau belum tersedia.']);
+            return back()->withErrors(['role' => 'Role tidak ditemukan di database.'])->withInput();
         }
-        $role_id = $role->id;
 
+        // 4. Buat User Utama
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role_id' => $role_id,
-            'active' => true, // kalau kamu pakai kolom active
+            'role_id' => $role->id,
+            'role' => $request->role, // Menyimpan string role untuk Middleware CheckRole
+            'active' => true,
         ]);
 
-        match ($request->role) {
-            'student' => Student::create([
+        // 5. Buat Data Relasi
+        if ($request->role === 'mahasiswa') {
+            \App\Models\Mahasiswa::create([ // Pastikan pakai model Mahasiswa
                 'user_id' => $user->id,
                 'nim' => $request->nim,
-                'program_studi' => $request->program_studi,
-                'angkatan' => $request->angkatan,
-            ]),
-            'lecturer' => Lecturer::create([
+            ]);
+        } elseif ($request->role === 'dosen') {
+            Lecturer::create([
                 'user_id' => $user->id,
                 'nidn' => $request->nidn,
-            ]),
-            default => null,
-        };
+            ]);
+        }
 
         event(new Registered($user));
         Auth::login($user);
 
-        return redirect()->intended(RouteServiceProvider::redirectBasedOnRole());
+        // Mengarahkan berdasarkan role menggunakan logic di RouteServiceProvider
+        return redirect(RouteServiceProvider::HOME);
     }
 }

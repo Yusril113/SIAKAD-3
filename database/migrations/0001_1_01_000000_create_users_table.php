@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Buat tabel users jika belum ada
+        // Buat tabel users
         if (!Schema::hasTable('users')) {
             Schema::create('users', function (Blueprint $table) {
                 $table->id();
@@ -19,13 +19,25 @@ return new class extends Migration
                 $table->string('email')->unique();
                 $table->timestamp('email_verified_at')->nullable();
                 $table->string('password');
-                $table->foreignId('role_id')->constrained()->onDelete('cascade');
+                
+                // 1. Kolom role (String): 
+                // Kita tambahkan index() agar pengecekan middleware role lebih cepat
+                $table->string('role')->nullable()->index(); 
+
+                // 2. Kolom role_id (Foreign Key):
+                // Menggunakan foreignId lebih bersih dan standar Laravel terbaru
+                $table->foreignId('role_id')->nullable()->index();
+
+                // 3. Kolom status aktif
+                // Pastikan default true agar user yang baru daftar bisa langsung login
+                $table->boolean('active')->default(true)->index();
+
                 $table->rememberToken();
                 $table->timestamps();
             });
         }
 
-        // Buat tabel password_reset_tokens
+        // Tabel password_reset_tokens dan sessions tetap sama
         if (!Schema::hasTable('password_reset_tokens')) {
             Schema::create('password_reset_tokens', function (Blueprint $table) {
                 $table->string('email')->primary();
@@ -34,7 +46,6 @@ return new class extends Migration
             });
         }
 
-        // Buat tabel sessions
         if (!Schema::hasTable('sessions')) {
             Schema::create('sessions', function (Blueprint $table) {
                 $table->string('id')->primary();

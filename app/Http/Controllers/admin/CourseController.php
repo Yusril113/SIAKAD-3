@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Course; // pastikan model Course sudah dibuat
 
 class CourseController extends Controller
 {
@@ -12,7 +13,8 @@ class CourseController extends Controller
      */
     public function index()
     {
-        //
+        $courses = Course::all();
+        return view('admin.courses.index', compact('courses'));
     }
 
     /**
@@ -20,7 +22,7 @@ class CourseController extends Controller
      */
     public function create()
     {
-        //
+        return view('admin.courses.create');
     }
 
     /**
@@ -28,7 +30,16 @@ class CourseController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'code' => 'required|string|max:10|unique:courses,code',
+            'name' => 'required|string|max:255',
+            'credits' => 'required|integer|min:1',
+        ]);
+
+        Course::create($validated);
+
+        return redirect()->route('admin.courses.index')
+                         ->with('success', 'Course created successfully!');
     }
 
     /**
@@ -36,7 +47,8 @@ class CourseController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $course = Course::findOrFail($id);
+        return view('admin.courses.show', compact('course'));
     }
 
     /**
@@ -44,7 +56,8 @@ class CourseController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $course = Course::findOrFail($id);
+        return view('admin.courses.edit', compact('course'));
     }
 
     /**
@@ -52,7 +65,18 @@ class CourseController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $course = Course::findOrFail($id);
+
+        $validated = $request->validate([
+            'code' => 'required|string|max:10|unique:courses,code,' . $course->id,
+            'name' => 'required|string|max:255',
+            'credits' => 'required|integer|min:1',
+        ]);
+
+        $course->update($validated);
+
+        return redirect()->route('admin.courses.index')
+                         ->with('success', 'Course updated successfully!');
     }
 
     /**
@@ -60,6 +84,10 @@ class CourseController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $course = Course::findOrFail($id);
+        $course->delete();
+
+        return redirect()->route('admin.courses.index')
+                         ->with('success', 'Course deleted successfully!');
     }
 }

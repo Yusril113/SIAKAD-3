@@ -9,26 +9,31 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-  /**
-   * Handle an incoming request.
-   *
-   * @param  \Illuminate\Http\Request  $request
-   * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-   * @param  mixed ...$roles
-   */
-  public function handle(Request $request, Closure $next, ...$roles): Response
-  {
-    $user = Auth::user();
+    /**
+     * Handle an incoming request.
+     */
+    public function handle(Request $request, Closure $next, ...$roles): Response
+    {
+        // 1. Cek apakah user sudah login
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
 
-    if (!$user || !$user->is_active) {
-      abort(403, 'Akses ditolak: pengguna tidak aktif.');
+        $user = Auth::user();
+
+        // 2. Sesuaikan kolom 'active' (bukan is_active) sesuai RegisteredUserController
+        // Berdasarkan kode pendaftaranmu, kolomnya bernama 'active'
+        if (!$user->active) {
+            Auth::logout();
+            return redirect()->route('login')->with('error', 'Akun Anda belum aktif atau dinonaktifkan.');
+        }
+
+        // 3. Pengecekan Role
+        // Memastikan role user (misal: 'mahasiswa') ada dalam daftar rute
+        if (!in_array($user->role, $roles)) {
+            abort(403, 'Akses ditolak: Anda login sebagai ' . $user->role . ', role ini tidak diizinkan.');
+        }
+
+        return $next($request);
     }
-
-    // Jika role disimpan sebagai string langsung
-    if (!in_array($user->role, $roles)) {
-      abort(403, 'Akses ditolak: role tidak sesuai.');
-    }
-
-    return $next($request);
-  }
 }

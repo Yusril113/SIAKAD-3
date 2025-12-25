@@ -1,11 +1,17 @@
 <?php 
-namespace App\Models;
 
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Models\Student;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
+// Pastikan semua model yang direlasikan sudah di-import
+use App\Models\mahasiswa;
+use App\Models\Lecturer; 
+use App\Models\Role;     
 
 class User extends Authenticatable
 {
@@ -15,7 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role_id'
+        'role_id',
+        'active', // Tambahkan 'active' jika Anda menggunakannya di Controller
     ];
 
     protected $hidden = [
@@ -28,25 +35,44 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            // Tambahkan 'active' jika itu boolean di database
+            // 'active' => 'boolean', 
         ];
     }
 
-    // Relasi ke Role
-    public function role()
+    // ===============================================
+    // RELATIONS
+    // ===============================================
+
+    // Relasi ke Role (Dipanggil sebagai $user->role)
+    public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
     }
 
-    // Relasi ke Student
-    public function student()
+    // Relasi ke Student (Dipanggil sebagai $user->student)
+    public function mahasiswa(): HasOne
     {
-        return $this->hasOne(Student::class);
-
+        return $this->hasOne(Mahasiswa::class);
     }
 
-    // Relasi ke Lecturer
-    public function lecturer()
+    // Relasi ke Lecturer (Dipanggil sebagai $user->lecturer)
+    public function lecturer(): HasOne
     {
        return $this->hasOne(Lecturer::class);
+    }
+
+    // ===============================================
+    // ACCESSOR (Penambahan Penting untuk Middleware & Redirect)
+    // ===============================================
+    
+    /**
+     * Accessor untuk mendapatkan nama peran (string).
+     * Dapat dipanggil di kode sebagai $user->role_name
+     */
+    public function getRoleNameAttribute(): ?string
+    {
+        // Cek apakah relasi role ada, lalu ambil nama.
+        return $this->role ? $this->role->name : null;
     }
 }

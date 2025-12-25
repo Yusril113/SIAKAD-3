@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Student extends Model
+class Mahasiswa extends Model
 {
     use HasFactory;
 
@@ -14,6 +14,7 @@ class Student extends Model
      * Kolom yang diizinkan untuk Mass Assignment.
      * HARUS menambahkan 'user_id'.
      */
+    protected $table = 'mahasiswa';
     protected $fillable = [
         'user_id', 
         'nim',

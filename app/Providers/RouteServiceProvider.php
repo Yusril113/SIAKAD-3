@@ -15,15 +15,29 @@ class RouteServiceProvider extends ServiceProvider
 
     /**
      * Redirect user based on their role.
+     *
+     * @return string
      */
     public static function redirectBasedOnRole(): string
     {
-        $role = Auth::user()->role->name ?? null;
-
-        return match ($role) {
-            'admin' => '/admin/dashboard',
-            'lecturer' => '/lecturer/dashboard',
-            'student' => '/student/dashboard',
+        // Pastikan pengguna telah login sebelum mencoba mengakses data role.
+        if (!Auth::check()) {
+             return '/login'; // Jika belum login, kembalikan ke halaman login
+        }
+        
+        // Menggunakan accessor 'role_name' yang sudah kita definisikan di Model User
+        // atau fallback ke relasi jika accessor tidak didefinisikan.
+        // Di sini kita menggunakan operator null-safe (?->) dan null coalescing (??) 
+        // untuk mencegah error jika relasi 'role' belum dimuat atau null.
+        $user = Auth::user();
+        $roleName = $user->role_name ?? ($user->role->name ?? null);
+        
+        // Jika Anda telah mendefinisikan route name di web.php (e.g., admin.dashboard),
+        // lebih baik menggunakan helper route() daripada path statis.
+        return match ($roleName) {
+            'admin' => route('admin.dashboard'),
+            'lecturer' => route('lecturer.dashboard'),
+            'student' => route('student.dashboard'),
             default => self::HOME,
         };
     }
@@ -33,6 +47,10 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Pastikan route service provider dapat menggunakan fungsi route()
+        // dengan memanggil parent::boot() sebelum mendefinisikan routes kustom.
+        parent::boot(); 
+
         $this->routes(function () {
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
